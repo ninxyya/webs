@@ -1,0 +1,2 @@
+Aisha Laundry server running at http://localhost:3000
+Admin credentials use ADMIN_USERNAME and ADMIN_PASSWORD_HASH environment variables.

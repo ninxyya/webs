@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Aisha Laundry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-body: #f4f7fe; --bg-surface: #ffffff;
+            --primary: #4318FF; --primary-hover: #3311db; --primary-light: #f4f7fe;
+            --secondary: #e2e8f0; --text-main: #2b3674; --text-muted: #a3aed1;
+            --danger: #ee5d50; --danger-light: #ffeeed;
+            --warning: #f59e0b; --warning-light: #fef3c7;
+            --success: #01b574; --success-light: #e5f7f0;
+            --border: #e9edf7; --radius-md: 14px; --radius-lg: 20px;
+            --shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg-body); color: var(--text-main); min-height: 100vh; display: flex; width: 100%; overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* TOAST NOTIF */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 11000; max-width: 380px; width: calc(100% - 40px); display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+        .toast { background: var(--bg-surface); color: var(--text-main); padding: 16px 20px; border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 14px; font-size: 0.95rem; font-weight: 600; border-left: 5px solid var(--primary); animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; pointer-events: auto; }
+        .toast.danger { border-left-color: var(--danger); } .toast.success { border-left-color: var(--success); } .toast.warning { border-left-color: var(--warning); }
+        @keyframes slideInRight { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* LOGIN SCREEN */
+        .login-wrapper { position: fixed; inset: 0; background: var(--bg-body); display: flex; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
+        .login-card { background: var(--bg-surface); padding: 48px 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow); width: 100%; max-width: 420px; text-align: center; }
+        .login-card h2 { font-weight: 800; font-size: 1.8rem; margin-bottom: 8px; color: var(--text-main); }
+        
+        /* SIDEBAR */
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(11, 20, 55, 0.5); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px); }
+        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+        .sidebar { width: 280px; background: var(--bg-surface); min-height: 100vh; padding: 32px 24px; display: flex; flex-direction: column; position: fixed; left: 0; top: 0; border-right: 1px solid var(--border); z-index: 1001; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 48px; display: flex; align-items: center; gap: 12px; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .nav-item { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-radius: var(--radius-md); color: var(--text-muted); text-decoration: none; font-weight: 600; cursor: pointer; transition: 0.2s;}
+        .nav-item:hover { background: var(--primary-light); color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 8px 16px rgba(67, 24, 255, 0.2); }
+        .nav-bottom { padding-top: 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+
+        /* MAIN */
+        #admin-panel { width: 100%; display: flex; }
+        .main-content { margin-left: 280px; flex: 1; padding: 40px; width: calc(100% - 280px); transition: margin 0.3s, width 0.3s; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .btn-menu { display: none; background: var(--bg-surface); border: 1px solid var(--border); padding: 10px 14px; border-radius: var(--radius-md); cursor: pointer; }
+        .card { background: var(--bg-surface); padding: 28px; border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-bottom: 24px; }
+        
+        /* FORMS */
+        .form-grid { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1fr auto; gap: 16px; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
+        .form-control { padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.95rem; background: #fdfefe; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(67,24,255,0.1); }
+        .form-control:disabled { background-color: var(--secondary); cursor: not-allowed; opacity: 0.7; }
+        
+        .btn { padding: 14px 24px; border: none; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--secondary); color: var(--text-main); }
+        .btn-sm { padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; }
+        .btn-edit { background: var(--warning-light); color: #d97706; }
+        .btn-delete { background: var(--danger-light); color: var(--danger); }
+
+        /* TABLES */
+        .table-container { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
+        th { padding: 16px; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        td { padding: 16px; font-size: 0.95rem; font-weight: 600; color: var(--text-main); border-bottom: 1px solid var(--border); }
+        
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+        .badge-regular { background: #e0e7ff; color: #4338ca; }
+        .badge-peritem { background: #fae8ff; color: #a21caf; }
+        .badge-kustom { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;}
+        .badge-success { background: var(--success-light); color: var(--success); }
+        .badge-info { background: #e0f2fe; color: #0284c7; }
+
+        /* CHART CONTAINER */
+        .chart-container { height: 320px; width: 100%; margin-top: 15px; }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); } .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100%; padding: 24px 16px; }
+            .btn-menu { display: inline-block; }
+        }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; gap: 12px; } }
+    </style>
+</head>
+<body>
+
+    <div class="toast-container" id="toast-container"></div>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="login-wrapper" id="login-screen">
+        <div class="login-card">
+            <h2>ADMIN PANEL  </h2>
+            <p>Aisha Laundry</p>
+            <div class="form-group" style="text-align: left; margin-bottom: 16px;">
+                <label>Username</label>
+                <input type="text" id="username" class="form-control" placeholder="Masukkan username Anda...">
+            </div>
+            <div class="form-group" style="text-align: left; margin-bottom: 32px;">
+                <label>Kata Sandi</label>
+                <input type="password" id="password" class="form-control" placeholder="Masukkan kata sandi...">
+            </div>
+            <button class="btn btn-primary" id="login-btn" type="button" style="width: 100%;" onclick="handleLogin()">Masuk Dashboard</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden">
+        
+        <aside class="sidebar" id="sidebar">
+            <div class="brand"><i class="fas fa-droplet" style="color:var(--primary);"></i> Aisha <span>Admin</span></div>
+            <div class="nav-menu">
+                <a class="nav-item active" onclick="switchMenu('layanan', this)"><i class="fas fa-layer-group"></i> Kelola Layanan</a>
+                <a class="nav-item" onclick="switchMenu('history', this)"><i class="fas fa-chart-bar"></i> Statistik & Riwayat</a>
+                <a class="nav-item" onclick="switchMenu('login-history', this)"><i class="fas fa-users-cog"></i> Riwayat Akses</a>
+            </div>
+            <div class="nav-bottom">
+                <a href="kasir.html" class="nav-item" style="color: var(--text-main);"><i class="fas fa-cash-register"></i> Ke Kasir</a>
+                <a class="nav-item" style="color: var(--danger);" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div class="header-left">
+                    <button class="btn-menu" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <div><h1 id="page-title">Kelola Layanan</h1></div>
+                </div>
+            </header>
+
+            <div id="view-layanan">
+                <div class="card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nama Pelayanan</label>
+                            <input type="text" id="new-name" class="form-control" placeholder="Contoh: Cuci Karpet">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipe Satuan</label>
+                            <select id="new-type" class="form-control" onchange="toggleFormInputs()">
+                                <option value="regular">Regular (Kg)</option>
+                                <option value="peritem">Per-Item (Pcs)</option>
+                                <option value="kustom">Kustom (Manual Kasir)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Min. Order</label>
+                            <input type="number" id="new-min-weight" class="form-control" placeholder="Kg (cth: 3)">
+                        </div>
+                        <div class="form-group">
+                            <label>Harga (Rp)</label>
+                            <input type="number" id="new-price" class="form-control" placeholder="0">
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn btn-primary" id="save-btn" style="flex:1" onclick="saveService()"><i class="fas fa-save"></i> Simpan</button>
+                            <button class="btn btn-secondary hidden" id="cancel-btn" onclick="cancelEdit()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nama Pelayanan</th>
+                                    <th>Tipe Basis</th>
+                                    <th>Harga Satuan</th>
+                                    <th style="text-align:right;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-history" class="hidden">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="color: var(--text-main);"><i class="fas fa-chart-line" style="color:var(--primary)"></i> Grafik Total Pelanggan</h3>
+                        <select id="chart-filter" class="form-control" style="width:auto; padding: 8px 12px;" onchange="renderChart(this.value)">
+                            <option value="week">7 Hari Terakhir</option>
+                            <option value="month">30 Hari Terakhir</option>
+                            <option value="year">1 Tahun (Per Bulan)</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="myChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: var(--text-main);"><i class="fas fa-receipt" style="color:var(--primary)"></i> Detail Riwayat Struk</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>ID Struk</th><th>Tanggal</th><th>Nama Pelanggan</th><th>Total Pembayaran</th><th>Status</th></tr></thead>
+                            <tbody id="history-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-login-history" class="hidden">
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: var(--text-main);"><i class="fas fa-user-shield" style="color:var(--danger)"></i> Log Aktivitas Admin</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Waktu Login</th><th>Username (Akun)</th><th>Status Akses</th></tr></thead>
+                            <tbody id="login-history-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        if (window.location.protocol === 'file:') {
+            window.location.replace('http://localhost:3000/adm.html');
+        }
+
+        let editId = null;
+        let chartInstance = null;
+        let servicesCache = [];
+        let transactionsCache = [];
+        const API_BASE_URL = window.location.protocol === 'file:' ? 'http://127.0.0.1:3000' : '';
+
+        async function apiRequest(url, options = {}) {
+            let response;
+            try {
+                response = await fetch(`${API_BASE_URL}${url}`, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+                    ...options
+                });
+            } catch {
+                throw new Error('Server tidak terhubung. Buka lewat http://localhost:3000/adm.html dan pastikan server.js berjalan.');
+            }
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.message || 'Request gagal.');
+            return payload;
+        }
+
+        function formatCurrency(value) {
+            return `Rp ${(Number(value) || 0).toLocaleString('id-ID')}`;
+        }
+
+        function setEmptyRow(tbody, colspan, message) {
+            tbody.innerHTML = '';
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.colSpan = colspan;
+            cell.style.textAlign = 'center';
+            cell.style.padding = '30px';
+            cell.textContent = message;
+            row.appendChild(cell);
+            tbody.appendChild(row);
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let iconClass = type === 'danger' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle';
+            toast.innerHTML = `<i class="fas ${iconClass}"></i><span></span>`;
+            toast.querySelector('span').textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('active');
+        }
+
+        function toggleFormInputs() {
+            const type = document.getElementById('new-type').value;
+            const minInput = document.getElementById('new-min-weight');
+            const priceInput = document.getElementById('new-price');
+
+            if(type === 'regular') {
+                minInput.disabled = false; minInput.placeholder = "Kg (cth: 3)";
+                priceInput.disabled = false; priceInput.placeholder = "0";
+            } else if (type === 'kustom') {
+                minInput.disabled = true; minInput.value = ''; minInput.placeholder = "Dikunci";
+                priceInput.disabled = true; priceInput.value = ''; priceInput.placeholder = "Input di Kasir";
+            } else {
+                minInput.disabled = true; minInput.value = ''; minInput.placeholder = "Dikunci";
+                priceInput.disabled = false; priceInput.placeholder = "0";
+            }
+        }
+
+        async function bootstrapAdmin() {
+            try {
+                const session = await apiRequest('/api/admin/session');
+                if (session.authenticated) {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                    await Promise.all([loadServices(), loadTransactions()]);
+                    renderAdminServices();
+                    renderHistory();
+                }
+            } catch {
+                showToast('Tidak bisa memeriksa sesi admin.', 'danger');
+            }
+        }
+
+        async function handleLogin() {
+            const loginBtn = document.getElementById('login-btn');
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value;
+            if (!u || !p) return showToast('Username dan kata sandi wajib diisi.', 'warning');
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            try {
+                await apiRequest('/api/admin/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                document.getElementById('password').value = '';
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                showToast('Login berhasil, Selamat datang!', 'success');
+                await Promise.all([loadServices(), loadTransactions()]);
+                renderAdminServices();
+                renderHistory();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Masuk Dashboard';
+            }
+        }
+
+        async function handleLogout() {
+            try { await apiRequest('/api/admin/logout', { method: 'POST' }); } catch {}
+            window.location.reload();
+        }
+
+        function switchMenu(menu, el) {
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            el.classList.add('active');
+
+            document.getElementById('view-layanan').classList.add('hidden');
+            document.getElementById('view-history').classList.add('hidden');
+            document.getElementById('view-login-history').classList.add('hidden');
+
+            if(menu === 'layanan') {
+                document.getElementById('view-layanan').classList.remove('hidden');
+                document.getElementById('page-title').innerText = 'Kelola Layanan';
+            } else if(menu === 'history') {
+                document.getElementById('view-history').classList.remove('hidden');
+                document.getElementById('page-title').innerText = 'Riwayat Transaksi & Statistik';
+                loadTransactions().then(() => { renderHistory(); renderChart(document.getElementById('chart-filter').value); });
+            } else if(menu === 'login-history') {
+                document.getElementById('view-login-history').classList.remove('hidden');
+                document.getElementById('page-title').innerText = 'Riwayat Akses Admin';
+                renderLoginHistory();
+            }
+            if (window.innerWidth <= 1024) toggleSidebar();
+        }
+
+        async function loadServices() {
+            const payload = await apiRequest('/api/admin/services');
+            servicesCache = payload.services || [];
+        }
+
+        async function loadTransactions() {
+            const payload = await apiRequest('/api/admin/transactions');
+            transactionsCache = payload.transactions || [];
+        }
+
+        async function renderLoginHistory() {
+            const body = document.getElementById('login-history-table-body');
+            body.innerHTML = '';
+
+            try {
+                const payload = await apiRequest('/api/admin/login-history');
+                const history = payload.loginHistory || [];
+                if(history.length === 0) return setEmptyRow(body, 3, 'Belum ada riwayat login.');
+
+                [...history].reverse().forEach(log => {
+                    const row = document.createElement('tr');
+                    const timeCell = document.createElement('td');
+                    timeCell.innerHTML = '<i class="far fa-clock" style="color:var(--text-muted)"></i> ';
+                    timeCell.append(document.createTextNode(log.time || '-'));
+
+                    const userCell = document.createElement('td');
+                    userCell.style.fontWeight = '700';
+                    userCell.textContent = `@${log.user || '-'}`;
+
+                    const statusCell = document.createElement('td');
+                    statusCell.innerHTML = '<span class="badge badge-info"><i class="fas fa-check"></i> Berhasil Masuk</span>';
+
+                    row.append(timeCell, userCell, statusCell);
+                    body.appendChild(row);
+                });
+            } catch (error) {
+                setEmptyRow(body, 3, error.message);
+            }
+        }
+
+        function renderAdminServices() {
+            const body = document.getElementById('services-table-body');
+            body.innerHTML = '';
+            if(servicesCache.length === 0) return setEmptyRow(body, 5, 'Belum ada layanan');
+
+            servicesCache.forEach(s => {
+                let badgeClass = s.type === 'regular' ? 'badge-regular' : s.type === 'peritem' ? 'badge-peritem' : 'badge-kustom';
+                let typeDisplay = s.type === 'regular' ? `Regular ${s.minWeight > 0 ? `(Min ${s.minWeight}Kg)` : ''}` : s.type === 'kustom' ? 'Kustom' : 'Per-Item';
+
+                const row = document.createElement('tr');
+                const idCell = document.createElement('td');
+                idCell.style.color = 'var(--text-muted)';
+                idCell.textContent = `#${s.id}`;
+
+                const nameCell = document.createElement('td');
+                nameCell.textContent = s.name || '-';
+
+                const typeCell = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = `badge ${badgeClass}`;
+                badge.textContent = typeDisplay;
+                typeCell.appendChild(badge);
+
+                const priceCell = document.createElement('td');
+                if (s.type === 'kustom') {
+                    const customPrice = document.createElement('span');
+                    customPrice.style.color = '#d97706';
+                    customPrice.style.fontSize = '0.8rem';
+                    customPrice.style.fontWeight = '700';
+                    customPrice.textContent = 'Input di Kasir';
+                    priceCell.appendChild(customPrice);
+                } else {
+                    priceCell.textContent = formatCurrency(s.price);
+                }
+
+                const actionCell = document.createElement('td');
+                actionCell.style.textAlign = 'right';
+
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn btn-sm btn-edit';
+                editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+                editBtn.addEventListener('click', () => startEdit(s.id));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-delete';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.addEventListener('click', () => deleteService(s.id));
+
+                actionCell.append(editBtn, document.createTextNode(' '), deleteBtn);
+                row.append(idCell, nameCell, typeCell, priceCell, actionCell);
+                body.appendChild(row);
+            });
+        }
+
+        function startEdit(id) {
+            const service = servicesCache.find(s => s.id === id);
+            if (!service) return;
+            editId = id;
+            document.getElementById('new-name').value = service.name;
+            document.getElementById('new-type').value = service.type;
+            document.getElementById('new-price').value = service.price || '';
+            document.getElementById('new-min-weight').value = service.type === 'regular' && service.minWeight > 0 ? service.minWeight : '';
+            toggleFormInputs();
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.innerHTML = `<i class="fas fa-check"></i> Update`; saveBtn.style.background = '#111827';
+            document.getElementById('cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            editId = null;
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-price').value = '';
+            document.getElementById('new-min-weight').value = '';
+            document.getElementById('new-type').value = 'regular';
+            toggleFormInputs();
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.innerHTML = `<i class="fas fa-save"></i> Simpan`; saveBtn.style.background = 'var(--primary)';
+            document.getElementById('cancel-btn').classList.add('hidden');
+        }
+
+        async function saveService() {
+            const name = document.getElementById('new-name').value.trim();
+            const type = document.getElementById('new-type').value;
+            const price = type === 'kustom' ? 0 : (parseInt(document.getElementById('new-price').value) || 0);
+            const minWeight = type === 'regular' ? parseFloat(document.getElementById('new-min-weight').value) || 0 : 0;
+
+            if(!name) return showToast('Nama pelayanan kosong!', 'warning');
+            if(type !== 'kustom' && price <= 0) return showToast('Harga harus lebih dari 0!', 'warning');
+            if(type === 'regular' && minWeight <= 0) return showToast('Minimal order harus lebih dari 0!', 'warning');
+
+            const payload = { name, type, price, minWeight };
+            try {
+                if (editId !== null) {
+                    await apiRequest(`/api/admin/services/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+                    showToast('Diperbarui!', 'success');
+                } else {
+                    await apiRequest('/api/admin/services', { method: 'POST', body: JSON.stringify(payload) });
+                    showToast('Ditambahkan!', 'success');
+                }
+                cancelEdit();
+                await loadServices();
+                renderAdminServices();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            }
+        }
+
+        async function deleteService(id) {
+            if(editId === id) return showToast('Selesaikan edit!', 'warning');
+            if(!confirm('Hapus permanen?')) return;
+
+            try {
+                await apiRequest(`/api/admin/services/${id}`, { method: 'DELETE' });
+                showToast('Dihapus!', 'success');
+                await loadServices();
+                renderAdminServices();
+            } catch (error) {
+                showToast(error.message, 'danger');
+            }
+        }
+
+        function parseDateId(dateStr) {
+            let parts = String(dateStr || '').split('/');
+            if(parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+            return new Date(dateStr);
+        }
+
+        function renderChart(filterType) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            const counts = new Map();
+            const now = new Date();
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+
+            transactionsCache.forEach(h => {
+                const dDate = parseDateId(h.date);
+                if (Number.isNaN(dDate.getTime()) || dDate > now) return;
+                const diffDays = Math.floor((now - dDate) / (1000 * 60 * 60 * 24));
+
+                if ((filterType === 'week' && diffDays <= 7) || (filterType === 'month' && diffDays <= 30)) {
+                    const key = h.date;
+                    counts.set(key, { label: key, value: (counts.get(key)?.value || 0) + 1, sort: dDate.getTime() });
+                } else if (filterType === 'year' && diffDays <= 365) {
+                    const key = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
+                    counts.set(key, { label: `${monthNames[dDate.getMonth()]} ${dDate.getFullYear()}`, value: (counts.get(key)?.value || 0) + 1, sort: dDate.getFullYear() * 100 + dDate.getMonth() });
+                }
+            });
+
+            const sorted = Array.from(counts.values()).sort((a, b) => a.sort - b.sort);
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(item => item.label),
+                    datasets: [{
+                        label: 'Total Pelanggan Baru',
+                        data: sorted.map(item => item.value),
+                        backgroundColor: '#4318FF',
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderHistory() {
+            const body = document.getElementById('history-table-body');
+            body.innerHTML = '';
+            if(transactionsCache.length === 0) return setEmptyRow(body, 5, 'Belum ada riwayat transaksi masuk dari Kasir.');
+
+            [...transactionsCache].reverse().forEach(h => {
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.style.color = 'var(--text-muted)';
+                idCell.textContent = h.id || '-';
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = h.date || '-';
+
+                const customerCell = document.createElement('td');
+                customerCell.style.fontWeight = '600';
+                customerCell.textContent = h.customer || '-';
+
+                const totalCell = document.createElement('td');
+                totalCell.style.color = 'var(--primary)';
+                totalCell.style.fontWeight = '800';
+                totalCell.textContent = formatCurrency(h.total);
+
+                const statusCell = document.createElement('td');
+                statusCell.innerHTML = '<span class="badge badge-success"><i class="fas fa-check-circle"></i> Selesai</span>';
+
+                row.append(idCell, dateCell, customerCell, totalCell, statusCell);
+                body.appendChild(row);
+            });
+        }
+
+        toggleFormInputs();
+        document.getElementById('username').addEventListener('keydown', event => {
+            if (event.key === 'Enter') document.getElementById('password').focus();
+        });
+        document.getElementById('password').addEventListener('keydown', event => {
+            if (event.key === 'Enter') handleLogin();
+        });
+        bootstrapAdmin();
+    </script>
+</body>
+</html>

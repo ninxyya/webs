@@ -1,0 +1,44 @@
+{
+  "services": [
+    {
+      "id": 1,
+      "name": "Cuci Regular (Putih/Warna)",
+      "type": "regular",
+      "price": 5000,
+      "minWeight": 5
+    },
+    {
+      "id": 2,
+      "name": "Cuci + Setrika",
+      "type": "regular",
+      "price": 8000,
+      "minWeight": 5
+    },
+    {
+      "id": 3,
+      "name": "Cuci + Dryer",
+      "type": "regular",
+      "price": 6500,
+      "minWeight": 5
+    },
+    {
+      "id": 4,
+      "name": "Dry Clean Premium",
+      "type": "regular",
+      "price": 15000,
+      "minWeight": 3
+    }
+  ],
+  "transactions": [],
+  "loginHistory": [
+    {
+      "user": "ninxy",
+      "time": "15/7/2026 Pukul 19.59.54"
+    },
+    {
+      "user": "ninxy",
+      "time": "15/7/2026 Pukul 19.59.54"
+    }
+  ],
+  "transactionCounter": 1
+}
